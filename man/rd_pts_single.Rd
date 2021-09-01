@@ -4,7 +4,7 @@
 \alias{rd_pts_single}
 \title{Simulate Survival time for a single arm}
 \usage{
-rd_pts_single(n, ve, lambda_placebo, lambda_censor, p_evaluable)
+rd_pts_single(n, ve, lambda_placebo, lambda_censor, p_evaluable, max_followup)
 }
 \description{
 Simulate Survival time for a single arm

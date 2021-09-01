@@ -4,7 +4,7 @@
 \alias{rd_summary}
 \title{Summarize results}
 \usage{
-rd_summary(rst_simu)
+rd_summary(rst_simu, arms = NULL)
 }
 \description{
 Summarize results

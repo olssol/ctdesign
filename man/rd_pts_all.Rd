@@ -11,6 +11,7 @@ rd_pts_all(
   n_tot = 15000,
   annual_dropout = 0.05,
   annual_enroll = 7500,
+  max_followup = 1,
   seed = NULL,
   ...
 )

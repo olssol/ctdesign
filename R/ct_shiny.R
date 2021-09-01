@@ -10,7 +10,7 @@
 #'
 #' @export
 #'
-ct_shiny <- function() {
+rd_shiny <- function() {
 
     req.pkgs        <- c("shiny", "shinythemes", "DT", "knitr", "rmarkdown", "pander");
     chk.uninstalled <- sapply(req.pkgs,

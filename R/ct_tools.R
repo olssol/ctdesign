@@ -34,15 +34,17 @@ rd_lambda_censor <- function(annual_dropout, tp = 1) {
 #'
 #'@export
 #'
-rd_pts_single <- function(n, ve, lambda_placebo, lambda_censor, p_evaluable) {
+rd_pts_single <- function(n, ve, lambda_placebo, lambda_censor,
+                          p_evaluable, max_followup) {
     lambda_trt  <- rd_incidence(ve, lambda_placebo)
     n_evaluable <- rbinom(1, n, p_evaluable)
     smp         <- rexp(n_evaluable, lambda_trt)
     smp_censor  <- rexp(n_evaluable, lambda_censor)
 
     rst_eval <- apply(cbind(smp, smp_censor), 1, function(x) {
-        y     <- min(x)
-        event <- x[1] < x[2]
+        y     <- min(c(x, max_followup))
+        event <- as.numeric(y == x[1])
+
         c(y, event)
     })
 
@@ -63,7 +65,7 @@ rd_pts_single <- function(n, ve, lambda_placebo, lambda_censor, p_evaluable) {
 rd_pts_all <- function(ve_trt, lambda_placebo, p_evaluable = 0.8,
                        n_tot = 15000,
                        annual_dropout = 0.05, annual_enroll = 7500,
-                       seed = NULL, ...) {
+                       max_followup = 1, seed = NULL, ...) {
 
     ## random seed
     if (!is.null(seed))
@@ -88,7 +90,9 @@ rd_pts_all <- function(ve_trt, lambda_placebo, p_evaluable = 0.8,
                                  ve_all[i],
                                  lambda_placebo,
                                  lambda_censor,
-                                 p_evaluable)
+                                 p_evaluable,
+                                 max_followup = max_followup)
+
         rst     <- rbind(rst, cbind(i, smp_arm))
     }
 
@@ -267,7 +271,7 @@ rd_simu_single <- function(ve_trt, lambda_placebo, target_event, ...,
     }
 
     ## results
-    rej_gate$Multi <- "Gate"
+    rej_gate$Multi <- "Fixed Sequence"
     rej_hoch$Multi <- "Hochberg"
 
     list(enroll    = enroll,
@@ -311,7 +315,6 @@ rd_simu_all <- function(n_reps  = 2000,
     rst_events    <- NULL
     for (i in seq_len(n_reps)) {
         cur_rst <- rst[[i]]
-
         if ("error" %in% class(cur_rst))
             next
 
@@ -329,19 +332,37 @@ rd_simu_all <- function(n_reps  = 2000,
 #'
 #'@export
 #'
-rd_summary <- function(rst_simu) {
+rd_summary <- function(rst_simu, arms = NULL) {
+
+    f_a <- function(rst, levels = seq_len(length(arms)), labels = arms) {
+        if (is.null(arms)) {
+            rst <- rst %>%
+                mutate(Arm = factor(Arm))
+        } else {
+            rst <- rst %>%
+                mutate(Arm = factor(Arm,
+                                    levels = levels,
+                                    labels = labels))
+        }
+        rst
+    }
+
     rst_enroll <- rst_simu$enroll %>%
         group_by(Target, Arm) %>%
-        summarize(N        = mean(N),
-                  Duration = mean(Duration))
+        summarize(TotalEnroll = mean(N),
+                  Duration    = mean(Duration)) %>%
+        f_a(levels = c(seq_len(length(arms)), "Total"),
+            labels = c(arms, "Total"))
 
     rst_rejection <- rst_simu$rejection %>%
         group_by(Target, Arm, Multi) %>%
-        summarize(Power = mean(Rej))
+        summarize(Power = mean(Rej)) %>%
+        f_a()
 
     rst_events <- rst_simu$events %>%
         group_by(Target, Arm) %>%
-        summarize(Events = mean(N))
+        summarize(ObservedEvents = mean(N)) %>%
+        f_a()
 
     list(enroll    = rst_enroll,
          events    = rst_events,
@@ -355,15 +376,13 @@ rd_summary <- function(rst_simu) {
 #'@export
 #'
 rd_plot_power <- function(rst_rejection) {
-    rst_rejection <- rst_rejection %>%
-        mutate(Arm = factor(Arm, levels = 1:4))
-
     ggplot(data = rst_rejection, aes(x = Target, y = Power)) +
-        geom_line(aes(group = Arm, color = Arm)) +
+        geom_line(aes(group = Arm, color = Arm, lty = Arm)) +
         facet_wrap(~Multi) +
         theme_bw() +
         ylim(0, 1) +
-        geom_hline(yintercept = 0.9)
+        geom_hline(yintercept = 0.9) +
+        labs(x = "Target Number of Events")
 }
 
 #' Plot Enroll
@@ -375,12 +394,13 @@ rd_plot_power <- function(rst_rejection) {
 rd_plot_enroll <- function(rst_enroll) {
     rst_enroll <- rst_enroll %>%
         filter(Arm == "Total") %>%
-        gather(key = Enroll, value = Y, N, Duration)
+        gather(key = Type, value = Y, TotalEnroll, Duration)
 
     ggplot(data = rst_enroll, aes(x = Target, y = Y)) +
         geom_line() +
-        facet_wrap(~ Enroll, scales = "free_y") +
-        theme_bw()
+        facet_wrap(~ Type, scales = "free_y") +
+        theme_bw() +
+        labs(x = "Target Number of Events")
 }
 
 #' Plot Events
@@ -390,10 +410,8 @@ rd_plot_enroll <- function(rst_enroll) {
 #'@export
 #'
 rd_plot_event <- function(rst_events) {
-    rst_events <- rst_events %>%
-        mutate(Arm = factor(Arm))
-
-    ggplot(data = rst_events, aes(x = Target, y = Events)) +
-        geom_line(aes(group = Arm, color = Arm)) +
-        theme_bw()
+    ggplot(data = rst_events, aes(x = Target, y = ObservedEvents)) +
+        geom_line(aes(group = Arm, color = Arm, lty = Arm)) +
+        theme_bw() +
+        labs(x = "Target Number of Events")
 }

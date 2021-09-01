@@ -40,6 +40,13 @@ tab_incidence <- function() {
              )
 }
 
+## incidence concept
+tab_multi <- function() {
+    tabPanel("Multiplicity",
+             wellPanel(withMathJax(includeHTML("www/multi.html")))
+             )
+}
+
 ## design page
 panel_par <- function() {
     wellPanel(
@@ -77,7 +84,11 @@ panel_par <- function() {
                    numericInput("inPeval",
                                 "Prop. of Evaluable Participants",
                                 value = 0.8, min = 0, max = 1,
-                                step = 0.01)),
+                                step = 0.01),
+                   numericInput("inMaxfu",
+                                "Max Follow Up (in Months)",
+                                value = 12, min = 3, max = 24,
+                                step = 1)),
             column(4,
                    numericInput("inPnull", "Binomial P for H0",
                                 value = 0.5, min = 0, max = 1,
@@ -86,7 +97,7 @@ panel_par <- function() {
                                 value = 100,
                                 min = 100, max = 10000,
                                 step = 10),
-                   numericInput("inMax", "Max Number of Enrollment",
+                   numericInput("inMaxenroll", "Max Number of Enrollment",
                                 value = 15000, min = 1000, max = 50000,
                                 step = 1000),
                    sliderInput("inNcores",
@@ -103,29 +114,22 @@ tab_design <- function() {
                  panel_par(),
                  wellPanel(
                      h4("Simulation Results"),
+                     wellPanel(
                      actionButton("btnSimu", "Conduct Simulation",
-                                  styleclass = "info"),
-                     fluidRow(
-                         column(4,
-                                wellPanel(h6("Power"),
-                                          plotOutput("pltPower"),
-                                          tableOutput("tblPower")
-                                          )
-                                ),
-                         column(4,
-                                wellPanel(h6("Enrollment"),
-                                          plotOutput("pltEnroll"),
-                                          tableOutput("tblEnroll")
-                                          )
-                                ),
-                         column(4,
-                                wellPanel(h6("Events"),
-                                          plotOutput("pltEvent"),
-                                          tableOutput("tblEvent")
-                                          )
-                                )
-
-                     )
+                                  styleclass = "info")),
+                     wellPanel(
+                     navlistPanel(
+                         tabPanel("Power",
+                                  plotOutput("pltPower"),
+                                  tableOutput("tblPower")),
+                         tabPanel("Events",
+                                  plotOutput("pltEvent"),
+                                  tableOutput("tblEvent")),
+                         tabPanel("Enrollment",
+                                  plotOutput("pltEnroll"),
+                                  tableOutput("tblEnroll")),
+                         widths = c(2, 10), well = FALSE
+                     ))
                  ))
              )
 }
@@ -137,6 +141,7 @@ tab_main <- function() {
                 id   = "mainpanel",
                 tab_abe(),
                 tab_incidence(),
+                tab_multi(),
                 tab_design())
 }
 
@@ -171,7 +176,8 @@ get_simu <- reactive({
         p_null         <- input$inPnull
         n_reps         <- input$inNrep
         n_cores        <- input$inNcores
-        n_tot          <- input$inMax
+        n_tot          <- input$inMaxenroll
+        max_followup   <- input$inMaxfu / 12
 
         ##Create a Progress object
         progress <- shiny::Progress$new(session, min = 0, max=1)
@@ -189,8 +195,11 @@ get_simu <- reactive({
                                 p_null         = p_null,
                                 n_cores        = n_cores,
                                 n_tot          = n_tot,
+                                max_followup   = max_followup,
                                 update_progress=progress)
     })
 
-    rd_summary(rst_simu)
+    rd_summary(rst_simu, arms = c("C 1200mg", "C 600/300mg",
+                                  "C* 1200mg", "C* 600/300mg",
+                                  "Placebo"))
 })
