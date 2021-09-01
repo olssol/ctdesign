@@ -73,7 +73,7 @@ rd_pts_all <- function(ve_trt, lambda_placebo, p_evaluable = 0.8,
 
     ## number of patients
     n_arm  <- length(ve_all)
-    n_each <- rep(ceiling(n_tot/n_arm), n_arm)
+    n_each <- rep(ceiling(n_tot / n_arm), n_arm)
 
     ## enrollment time
     enroll_years <- n_tot / annual_enroll
@@ -244,8 +244,8 @@ rd_simu_single <- function(ve_trt, lambda_placebo, target_event, ...,
     events <- counts$events
     enroll <- counts$enroll
 
-    rej_gate <- NULL
-    rej_hoch <- NULL
+    rej_gate   <- NULL
+    rej_hoch   <- NULL
     for (j in target_event) {
         cur_data <- events %>%
             filter(Target == `j`) %>%
@@ -271,6 +271,7 @@ rd_simu_single <- function(ve_trt, lambda_placebo, target_event, ...,
     rej_hoch$Multi <- "Hochberg"
 
     list(enroll    = enroll,
+         events    = events,
          rejection = rbind(rej_gate, rej_hoch))
 }
 
@@ -288,19 +289,18 @@ rd_simu_all <- function(n_reps  = 2000,
         n_cores <- 1;
     }
 
-    shiny <- "PROGRESS" %in% toupper(class(update_progress))
+    is_shiny <- !is.null(update_progress)
 
-    if (shiny)
+    if (is_shiny & n_cores > 1)
         update_progress$set(value = 1, detail = paste(""))
 
     rst <- parallel::mclapply(seq_len(n_reps), function(x) {
-        if (shiny) {
+        if (is_shiny) {
             update_progress$set(value  = x / n_reps,
                                 detail = paste("Replication",
-                                               x, sep=" "))
-        } else {
-            cat("---- Replication", x, "\n")
+                                               x, sep = " "))
         }
+        cat("---- Replication", x, "\n")
 
         rd_simu_single(..., seed = 1000 * x)
     },  mc.cores = n_cores)
@@ -308,6 +308,7 @@ rd_simu_all <- function(n_reps  = 2000,
     ## summarize
     rst_enroll    <- NULL
     rst_rejection <- NULL
+    rst_events    <- NULL
     for (i in seq_len(n_reps)) {
         cur_rst <- rst[[i]]
 
@@ -316,9 +317,11 @@ rd_simu_all <- function(n_reps  = 2000,
 
         rst_enroll    <- rbind(rst_enroll,    cur_rst$enroll)
         rst_rejection <- rbind(rst_rejection, cur_rst$rejection)
+        rst_events    <- rbind(rst_events   , cur_rst$events)
     }
 
     list(enroll    = rst_enroll,
+         events    = rst_events,
          rejection = rst_rejection)
 }
 
@@ -336,7 +339,12 @@ rd_summary <- function(rst_simu) {
         group_by(Target, Arm, Multi) %>%
         summarize(Power = mean(Rej))
 
+    rst_events <- rst_simu$events %>%
+        group_by(Target, Arm) %>%
+        summarize(Events = mean(N))
+
     list(enroll    = rst_enroll,
+         events    = rst_events,
          rejection = rst_rejection)
 }
 
@@ -372,5 +380,20 @@ rd_plot_enroll <- function(rst_enroll) {
     ggplot(data = rst_enroll, aes(x = Target, y = Y)) +
         geom_line() +
         facet_wrap(~ Enroll, scales = "free_y") +
+        theme_bw()
+}
+
+#' Plot Events
+#'
+#'
+#'
+#'@export
+#'
+rd_plot_event <- function(rst_events) {
+    rst_events <- rst_events %>%
+        mutate(Arm = factor(Arm))
+
+    ggplot(data = rst_events, aes(x = Target, y = Events)) +
+        geom_line(aes(group = Arm, color = Arm)) +
         theme_bw()
 }

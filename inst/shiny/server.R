@@ -64,7 +64,7 @@ shinyServer(function(input, output, session) {
         if (is.null(r1) | is.null(ratio))
             return(NULL)
 
-        rst   <- get_all(r1, seq(r1, 1, by = 0.02), ratio)
+        rst   <- rd_rr(r1, seq(r1, 1, by = 0.02), ratio)
         dta   <- rbind(data.frame(RR    = rst[, 4],
                                   Y     = rst[, 5],
                                   Label = "AbE"),
@@ -79,4 +79,50 @@ shinyServer(function(input, output, session) {
             ylim(0, 1) +
             theme_bw()
     })
+
+    output$pltPower <- renderPlot({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+
+        rd_plot_power(rst_simu$rejection)
+    })
+
+    output$tblPower <- renderTable({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+        rst_simu$rejection
+    })
+
+    output$pltEnroll <- renderPlot({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+
+        rd_plot_enroll(rst_simu$enroll)
+    })
+
+    output$tblEnroll <- renderTable({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+        rst_simu$enroll
+    })
+
+    output$pltEvent <- renderPlot({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+
+        rd_plot_event(rst_simu$events)
+    })
+
+    output$tblEvent <- renderTable({
+        rst_simu <- get_simu()
+        if (is.null(rst_simu))
+            return(NULL)
+        rst_simu$events
+    })
+
 })
