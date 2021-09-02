@@ -271,7 +271,7 @@ rd_simu_single <- function(ve_trt, lambda_placebo, target_event, ...,
     }
 
     ## results
-    rej_gate$Multi <- "Fixed Sequence"
+    rej_gate$Multi <- "Hierarchical"
     rej_hoch$Multi <- "Hochberg"
 
     list(enroll    = enroll,
@@ -290,7 +290,7 @@ rd_simu_all <- function(n_reps  = 2000,
 
     if (.Platform$OS.type == "windows" && n_cores > 1) {
         warning("n_cores is set to be 1 on Windows.");
-        n_cores <- 1;
+        n_cores <- 1
     }
 
     is_shiny <- !is.null(update_progress)

@@ -34,7 +34,7 @@ shinyServer(function(input, output, session) {
         stopApp()})
 
     ##--------------------------------------
-    ##---------vaccine efficacy-------------
+    ##---------calculator-------------------
     ##--------------------------------------
 
     to_listen <- reactive({
@@ -54,6 +54,8 @@ shinyServer(function(input, output, session) {
         updateNumericInput(session, "inRR",   value = rst[4])
         updateNumericInput(session, "inAbe",  value = rst[5])
         updateNumericInput(session, "inProb", value = rst[6])
+        updateNumericInput(session, "inPtrt", value = 1 - exp(-r1))
+        updateNumericInput(session, "inPctl", value = 1 - exp(-r2))
     })
 
 
@@ -79,6 +81,32 @@ shinyServer(function(input, output, session) {
             ylim(0, 1) +
             theme_bw()
     })
+
+    observeEvent(input$btnCal, {
+        if (0 == input$btnCal)
+            return(NULL)
+
+        lambda <- input$inClambda
+        year   <- input$inCmonth / 12
+        prob   <- 1 - exp(-lambda * year)
+
+        updateNumericInput(session, "inCprob", value = prob)
+    })
+
+    observeEvent(input$btnCal2, {
+        if (0 == input$btnCal2)
+            return(NULL)
+
+        year   <- input$inCmonth2 / 12
+        prob   <- input$inCprob2
+        lambda <- - log(1 - prob) / year
+
+        updateNumericInput(session, "inClambda2", value = lambda)
+    })
+
+    ##--------------------------------------
+    ##---------simulation results-----------
+    ##--------------------------------------
 
     output$pltPower <- renderPlot({
         rst_simu <- get_simu()
