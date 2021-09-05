@@ -236,8 +236,8 @@ rd_simu_all <- function(reps           = 1:2000,
 
     f_a <- function(dta, rep) {
         cbind(Rep            = rep,
-              Scenario       = as.character(scenario),
-              IR_Placebo_1Yr = as.character(ir_placebo_1yr),
+              Scenario       = scenario,
+              IR_Placebo_1Yr = ir_placebo_1yr,
               dta)
     }
 

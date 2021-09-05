@@ -1,27 +1,63 @@
+#' Combine simulation results
+#'
+#'@export
+#'
+rd_simu_combine <- function(reps = 1:100, prefix = "./Results/rst_") {
+    rst_enroll    <- NULL
+    rst_rejection <- NULL
+    rst_event     <- NULL
+    rst_duration  <- NULL
+    for (i in reps) {
+        cur_f <- paste(prefix, i, ".Rdata", sep = "")
+        if (!file.exists(cur_f)) {
+            print(cur_f)
+            next
+        }
+
+        ss <- get(load(cur_f))
+        for (j in ss) {
+            rst_enroll    <- rbind(rst_enroll,    j$enroll)
+            rst_rejection <- rbind(rst_rejection, j$rejection)
+            rst_event     <- rbind(rst_event,     j$event)
+            rst_duration  <- rbind(rst_duration,  j$duration)
+        }
+    }
+
+    list(enroll    = rst_enroll,
+         event     = rst_event,
+         duration  = rst_duration,
+         rejection = rst_rejection)
+}
+
+
 #' Summarize results
 #'
 #'@export
 #'
 rd_summary <- function(rst_simu) {
     rst_enroll <- rst_simu$enroll %>%
-        group_by(Target, Arm) %>%
-        summarize(Value = mean(N),
+        group_by(Scenario, IR_Placebo_1Yr, Target, Arm) %>%
+        summarize(Rep   = n(),
+                  Value = mean(N),
                   Type  = "Total Enroll")
 
     rst_duration <- rst_simu$duration %>%
-        group_by(Target) %>%
-        summarize(Value = mean(Duration)) %>%
+        group_by(Scenario, IR_Placebo_1Yr, Target) %>%
+        summarize(Rep   = n(),
+                  Value = mean(Duration)) %>%
         mutate(Arm = "Total",
                Type = "Duration")
 
     rst_rejection <- rst_simu$rejection %>%
-        group_by(Target, Arm, Multi) %>%
-        summarize(Value = mean(Rej),
+        group_by(Scenario, IR_Placebo_1Yr, Target, Arm, Multi) %>%
+        summarize(Rep   = n(),
+                  Value = mean(Rej),
                   Type  = "Power")
 
     rst_event <- rst_simu$event %>%
-        group_by(Target, Arm) %>%
-        summarize(`Observed Events` = mean(N_Event),
+        group_by(Scenario, IR_Placebo_1Yr, Target, Arm) %>%
+        summarize(Rep = n(),
+                  `Observed Events` = mean(N_Event),
                   `Observed IR`     = mean(IR),
                   `Observed AbE`    = mean(AbE)) %>%
         gather(key = "Type",
@@ -35,7 +71,10 @@ rd_summary <- function(rst_simu) {
         rbind(rst_rejection) %>%
         mutate(Arm = factor(Arm,
                             levels = c(levels(rst_event$Arm),
-                                       "Any Arm", "Total")))
+                                       "Any Arm", "Total")),
+               Scenario = factor(Scenario),
+               Type     = factor(Type),
+               Multi    = factor(Multi))
     rst_info
 }
 
@@ -53,7 +92,7 @@ rd_get_results <- function(rst_summary,
             left_join(rst_summary %>%
                       filter(Type == "Duration") %>%
                       mutate(Duration = Value) %>%
-                      select(Target, Duration)) %>%
+                      select(Target, Rep, Duration)) %>%
             left_join(rst_summary %>%
                       filter(Type == "Total Enroll" &
                              Arm  == "Total") %>%
