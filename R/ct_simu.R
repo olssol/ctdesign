@@ -185,7 +185,9 @@ rd_count_event <- function(smps_all, target_event) {
 #'@export
 #'
 #'
-rd_simu_single <- function(ve_trt, target_event, hyp_tests, ir_placebo_1yr, ...,
+rd_simu_single <- function(ve_trt, target_event, hyp_tests,
+                           ...,
+                           ir_placebo_1yr,
                            scenario = 1, rep = 1,  seed = NULL) {
 
     f <- function(dta) {
@@ -194,8 +196,6 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests, ir_placebo_1yr, ...,
               Scenario       = scenario,
               IR_Placebo_1Yr = ir_placebo_1yr)
     }
-
-
 
     if (is.numeric(seed)) {
         old_seed_kind <- RNGkind("L'Ecuyer-CMRG")
@@ -214,6 +214,10 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests, ir_placebo_1yr, ...,
         cur_data <- event %>%
             filter(Target == `j`) %>%
             arrange(Arm)
+
+        if (0 == nrow(cur_data))
+            next
+
         cur_pvals <- rd_pairwise_pval(cur_data, ...)
         cur_rej   <- rd_rejection_all(cur_pvals, hyp_tests)
         rejection <- rbind(rejection,
@@ -270,11 +274,11 @@ rd_simu_all <- function(reps           = 1:2000,
         }
         cat("--Rep ", x, "\n")
 
-        rd_simu_single(ir_placebo_1yr = ir_placebo_1yr,
+        rd_simu_single(...,
+                       ir_placebo_1yr = ir_placebo_1yr,
                        scenario       = scenario,
                        rep            = reps[x],
-                       ...,
-                       seed = seeds[reps[x]])
+                       seed           = seeds[reps[x]])
 
     }, mc.cores = n_cores)
 
