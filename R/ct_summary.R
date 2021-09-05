@@ -1,35 +1,3 @@
-#' Combine simulation results
-#'
-#'@export
-#'
-rd_simu_combine <- function(reps = 1:100, prefix = "./Results/rst_") {
-    rst_enroll    <- NULL
-    rst_rejection <- NULL
-    rst_event     <- NULL
-    rst_duration  <- NULL
-    for (i in reps) {
-        cur_f <- paste(prefix, i, ".Rdata", sep = "")
-        if (!file.exists(cur_f)) {
-            print(cur_f)
-            next
-        }
-
-        ss <- get(load(cur_f))
-        for (j in ss) {
-            rst_enroll    <- rbind(rst_enroll,    j$enroll)
-            rst_rejection <- rbind(rst_rejection, j$rejection)
-            rst_event     <- rbind(rst_event,     j$event)
-            rst_duration  <- rbind(rst_duration,  j$duration)
-        }
-    }
-
-    list(enroll    = rst_enroll,
-         event     = rst_event,
-         duration  = rst_duration,
-         rejection = rst_rejection)
-}
-
-
 #' Summarize results
 #'
 #'@export
@@ -92,12 +60,12 @@ rd_get_results <- function(rst_summary,
             left_join(rst_summary %>%
                       filter(Type == "Duration") %>%
                       mutate(Duration = Value) %>%
-                      select(Target, Rep, Duration)) %>%
+                      select(Scenario, IR_Placebo_1Yr, Target, Rep, Duration)) %>%
             left_join(rst_summary %>%
                       filter(Type == "Total Enroll" &
                              Arm  == "Total") %>%
                       mutate(SampleSize = Value) %>%
-                      select(Target, SampleSize))
+                      select(Scenario, IR_Placebo_1Yr, Target, SampleSize))
     }
 
     f_j2 <- function(dta) {
@@ -105,15 +73,15 @@ rd_get_results <- function(rst_summary,
             left_join(rst_summary %>%
                       filter(Type == "Observed AbE") %>%
                       mutate(Observed_AbE = Value) %>%
-                      select(Target, Arm, Observed_AbE)) %>%
+                      select(Scenario, IR_Placebo_1Yr, Target, Arm, Observed_AbE)) %>%
             left_join(rst_summary %>%
                       filter(Type == "Observed IR") %>%
                       mutate(Observed_IR = Value) %>%
-                      select(Target, Arm, Observed_IR)) %>%
+                      select(Scenario, IR_Placebo_1Yr, Target, Arm, Observed_IR)) %>%
             left_join(rst_summary %>%
                       filter(Type == "Observed Events") %>%
                       mutate(Observed_Event = Value) %>%
-                      select(Target, Arm, Observed_Event))
+                      select(Scenario, IR_Placebo_1Yr, Target, Arm, Observed_Event))
     }
 
     rst_rejection <- rst_summary %>%
@@ -133,11 +101,57 @@ rd_get_results <- function(rst_summary,
 
     rst_rejection %>%
         filter(Value >= `power_level`) %>%
-        group_by(Arm, Multi) %>%
+        group_by(Scenario, IR_Placebo_1Yr, Arm, Multi) %>%
         arrange(Value) %>%
         slice_head(n = 1) %>%
         rename(Power_By = Arm,
                Power    = Value) %>%
         f_j1() %>%
         f_j2()
+}
+
+#' Combine simu list
+#'
+#' @export
+rd_combine_lst <- function(lst_rst) {
+    rst_enroll    <- NULL
+    rst_rejection <- NULL
+    rst_event     <- NULL
+    rst_duration  <- NULL
+
+    for (cur_rst in lst_rst) {
+        if ("error" %in% class(cur_rst))
+            next
+
+        rst_enroll    <- rbind(rst_enroll,    cur_rst$enroll   )
+        rst_rejection <- rbind(rst_rejection, cur_rst$rejection)
+        rst_event     <- rbind(rst_event,     cur_rst$event    )
+        rst_duration  <- rbind(rst_duration,  cur_rst$duration )
+    }
+
+    list(enroll    = rst_enroll,
+         event     = rst_event,
+         duration  = rst_duration,
+         rejection = rst_rejection)
+}
+
+#' Combine simulation results
+#'
+#'@export
+#'
+rd_combine_files <- function(reps = 1:100, prefix = "./Results/rst_") {
+
+    lst_simu <- NULL
+    for (i in reps) {
+        cur_f <- paste(prefix, i, ".Rdata", sep = "")
+        if (!file.exists(cur_f)) {
+            print(cur_f)
+            next
+        }
+        print(i)
+
+        lst_simu <- c(lst_simu, get(load(cur_f)))
+    }
+
+    rd_combine_lst(lst_simu)
 }

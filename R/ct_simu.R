@@ -185,7 +185,17 @@ rd_count_event <- function(smps_all, target_event) {
 #'@export
 #'
 #'
-rd_simu_single <- function(ve_trt, target_event, hyp_tests, ..., seed = NULL) {
+rd_simu_single <- function(ve_trt, target_event, hyp_tests, ir_placebo_1yr, ...,
+                           scenario = 1, rep = 1,  seed = NULL) {
+
+    f <- function(dta) {
+        cbind(dta,
+              Rep            = rep,
+              Scenario       = scenario,
+              IR_Placebo_1Yr = ir_placebo_1yr)
+    }
+
+
 
     if (is.numeric(seed)) {
         old_seed_kind <- RNGkind("L'Ecuyer-CMRG")
@@ -193,7 +203,7 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests, ..., seed = NULL) {
         set.seed(seed)
     }
 
-    pts      <- rd_pts_all(ve_trt, ...)
+    pts      <- rd_pts_all(ve_trt, ir_placebo_1yr, ...)
     counts   <- rd_count_event(pts, target_event)
     event    <- counts$event
     enroll   <- counts$enroll
@@ -216,10 +226,10 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests, ..., seed = NULL) {
     }
 
     ## results
-    list(enroll    = enroll,
-         event     = event,
-         duration  = duration,
-         rejection = rejection)
+    list(enroll    = f(enroll),
+         event     = f(event),
+         duration  = f(duration),
+         rejection = f(rejection))
 }
 
 #' Simulate all
@@ -233,13 +243,6 @@ rd_simu_all <- function(reps           = 1:2000,
                         update_progress = NULL,
                         ...,
                         seed = NULL) {
-
-    f_a <- function(dta, rep) {
-        cbind(Rep            = rep,
-              Scenario       = scenario,
-              IR_Placebo_1Yr = ir_placebo_1yr,
-              dta)
-    }
 
     ## system
     if (.Platform$OS.type == "windows" && n_cores > 1) {
@@ -265,36 +268,21 @@ rd_simu_all <- function(reps           = 1:2000,
                                 detail = paste("Replication",
                                                x, sep = " "))
         }
-        cat("---- Replication", x, "\n")
+        cat("--Rep ", x, "\n")
 
         rd_simu_single(ir_placebo_1yr = ir_placebo_1yr,
+                       scenario       = scenario,
+                       rep            = reps[x],
                        ...,
                        seed = seeds[reps[x]])
 
     }, mc.cores = n_cores)
 
-    ## summarize
-    rst_enroll    <- NULL
-    rst_rejection <- NULL
-    rst_event     <- NULL
-    rst_duration  <- NULL
-    for (i in seq_len(n_reps)) {
-        cur_rst <- rst[[i]]
-        if ("error" %in% class(cur_rst))
-            next
-
-        rst_enroll    <- rbind(rst_enroll,    f_a(cur_rst$enroll,    reps[i]))
-        rst_rejection <- rbind(rst_rejection, f_a(cur_rst$rejection, reps[i]))
-        rst_event     <- rbind(rst_event,     f_a(cur_rst$event,     reps[i]))
-        rst_duration  <- rbind(rst_duration,  f_a(cur_rst$duration,  reps[i]))
-    }
 
     ## set seed
     if (!is.null(seed))
         old_seed <- set.seed(seed)
 
-    list(enroll    = rst_enroll,
-         event     = rst_event,
-         duration  = rst_duration,
-         rejection = rst_rejection)
+    ## return
+    rst
 }

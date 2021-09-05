@@ -4,7 +4,16 @@
 \alias{rd_simu_single}
 \title{Overall}
 \usage{
-rd_simu_single(ve_trt, target_event, hyp_tests, ..., seed = NULL)
+rd_simu_single(
+  ve_trt,
+  target_event,
+  hyp_tests,
+  ir_placebo_1yr,
+  ...,
+  scenario = 1,
+  rep = 1,
+  seed = NULL
+)
 }
 \description{
 Overall
