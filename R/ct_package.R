@@ -14,7 +14,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom utils as.roman
 #' @importFrom dplyr %>% group_by_ group_by summarize mutate count mutate_if
-#'     rename filter select arrange ungroup n distinct left_join if_else
+#'     rename filter select arrange ungroup n distinct left_join if_else rowwise
 #' @importFrom tidyr gather
 #'
 #' @description Clinical trial design tools
