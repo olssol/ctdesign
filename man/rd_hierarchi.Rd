@@ -4,7 +4,7 @@
 \alias{rd_hierarchi}
 \title{Hierarchical}
 \usage{
-rd_hierarchi(pvals, p_inx = NULL, alpha = 0.05)
+rd_hierarchi(pvals, p_inx = NULL, alpha = 0.05, ...)
 }
 \description{
 Hierarchical

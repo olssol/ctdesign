@@ -16,21 +16,23 @@ rd_pts_single <- function(n, ve, lambda_placebo, lambda_censor,
                           y     <- min(c(x, max_followup))
                           event <- as.numeric(y == x[1])
 
-                          c(y, event)
+                          c(y, event, x)
                       })
 
     rst <- t(rst_eval)
 
     ## if there are inevaluable subjects
     if (n_evaluable < n) {
-        rst_in_eval <- cbind(rep(-1, n - n_evaluable),
-                             rep(-1, n - n_evaluable))
-        rst <- rbind(rst, rst_in_eval)
+        rst_in_eval <- matrix(-1,
+                              nrow = n - n_evaluable,
+                              ncol = ncol(rst))
+        rst <- rbind(rst,
+                     rst_in_eval)
     }
 
     ## return
     rst           <- rst[sample(n), ]
-    colnames(rst) <- c("Time", "Event")
+    colnames(rst) <- c("Time", "Event", "T_Event", "T_Censor")
     data.frame(rst)
 }
 
@@ -66,7 +68,8 @@ rd_pts_all <- function(ve_trt, ir_placebo_1yr, p_evaluable = 1,
     n_arm    <- length(ve_all)
 
     ## number of patients
-    n_each <- rep(ceiling(n_tot / n_arm), n_arm)
+    n_tot  <- ceiling(n_tot / n_arm) * n_arm
+    n_each <- rep(n_tot / n_arm, n_arm)
 
     ## enrollment time
     enroll_years <- n_tot / annual_enroll
@@ -219,7 +222,7 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests,
             next
 
         cur_pvals <- rd_pairwise_pval(cur_data, ...)
-        cur_rej   <- rd_rejection_all(cur_pvals, hyp_tests)
+        cur_rej   <- rd_rejection_all(cur_pvals, hyp_tests, ...)
         rejection <- rbind(rejection,
                            cbind(Target = j, cur_rej))
     }

@@ -8,8 +8,8 @@ rd_simu_single(
   ve_trt,
   target_event,
   hyp_tests,
-  ir_placebo_1yr,
   ...,
+  ir_placebo_1yr,
   scenario = 1,
   rep = 1,
   seed = NULL

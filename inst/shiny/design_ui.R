@@ -39,23 +39,19 @@ panel_par_1 <- function() {
                  fluidRow(
                      column(4,
                             numericInput("inIpla",
-                                         "Placebo Incidence Rate",
+                                         "Placebo Incidence Rate at 1 Year",
                                          value = 0.04,
                                          min = 0.005, max = 1,
                                          step = 0.005),
-                            numericInput("inAe1", "AbE: C 1200mg",
+                            numericInput("inAe1", "AbE: Gen-1",
                                          value = 0.55,
                                          min = 0.1, max = 1,
                                          step = 0.01),
-                            numericInput("inAe2", "AbE: C 600/300mg",
+                            numericInput("inAe2", "AbE: Gen-2, High D",
                                          value = 0.55,
                                          min = 0.1, max = 1,
                                          step = 0.01),
-                            numericInput("inAe3", "AbE: C* 1200mg",
-                                         value = 0.55,
-                                         min = 0.1, max = 1,
-                                         step = 0.01),
-                            numericInput("inAe4", "AbE: C* 600/300mg",
+                            numericInput("inAe3", "AbE: Gen-2, Low D",
                                          value = 0.55,
                                          min = 0.1, max = 1,
                                          step = 0.01)
@@ -63,20 +59,16 @@ panel_par_1 <- function() {
                      column(4,
                             numericInput("inAenroll",
                                          "Annual Enroll Rate",
-                                         value = 7500,
-                                         min = 100, max = 20000,
+                                         value = 6000,
+                                         min = 100, max = 15000,
                                          step = 100),
                             numericInput("inAdrop",
                                          "Annual Dropout Rate",
-                                         value = 0.01, min = 0, max = 1,
-                                         step = 0.01),
-                            numericInput("inPeval",
-                                         "Prop. of Evaluable Participants",
-                                         value = 0.8, min = 0, max = 1,
+                                         value = 0.04, min = 0, max = 1,
                                          step = 0.01),
                             numericInput("inMaxfu",
                                          "Max Follow Up (in Months)",
-                                         value = 12, min = 3, max = 24,
+                                         value = 6, min = 3, max = 24,
                                          step = 1)))
              ))
 }
@@ -96,7 +88,11 @@ panel_par_2 <- function() {
                                          "Number of Replications",
                                          value = 100,
                                          min = 100, max = 10000,
-                                         step = 10)
+                                         step = 10),
+                            numericInput("inPeval",
+                                         "Prop. of Evaluable Participants",
+                                         value = 1, min = 0, max = 1,
+                                         step = 0.01)
                             ),
                      column(4,
                             numericInput("inMaxenroll",
@@ -108,43 +104,55 @@ panel_par_2 <- function() {
                                         "Number of Cores",
                                         value = 5, min = 1,
                                         max = (parallel::detectCores() - 1),
-                                        step = 1)
+                                        step = 1),
+                            numericInput("inSeed",
+                                        "Random Seed",
+                                        value = 10000, min = 1, max = 1000000),
+                            textInput("inSce", "Scenario", "Online Simulation")
                             ))
              ))
 }
 
-tab_design <- function() {
-    tabPanel("Design",
-             fluidPage(
-                 wellPanel(
-                     h4("Settings"),
-                     navlistPanel(
-                         panel_par_1(),
-                         panel_par_2(),
-                         widths = c(3, 9))
-                 ),
-                 wellPanel(
-                     h4("Simulation Results"),
+panel_results <- function() {
+    wellPanel(
+        h4("Simulation Results"),
+        navlistPanel(
+            tabPanel("Power",
                      wellPanel(
-                         actionButton("btnSimu", "Conduct Simulation",
-                                      styleclass = "info")),
-                     navlistPanel(
-                         tabPanel("Power",
-                                  wellPanel(
-                                      plotOutput("pltPower"),
-                                      tableOutput("tblPower"))),
-                         tabPanel("Events",
-                                  wellPanel(
-                                      plotOutput("pltEvent"),
-                                      tableOutput("tblEvent"))),
-                         tabPanel("Enrollment",
-                                  wellPanel(
-                                      plotOutput("pltEnroll"),
-                                      tableOutput("tblEnroll"))),
-                         widths = c(3, 9)
-                     ))
-                 )
-             )
+                         plotOutput("pltPower"),
+                         tableOutput("tblPower"))),
+            tabPanel("Events",
+                     wellPanel(
+                         plotOutput("pltEvent"),
+                         tableOutput("tblEvent"))),
+            tabPanel("Enrollment",
+                     wellPanel(
+                         plotOutput("pltEnroll"),
+                         tableOutput("tblEnroll"))),
+            widths = c(3, 9)
+        ))
+}
+
+tab_design <- function() {
+    tabPanel("Simulation",
+             wellPanel(
+                 h4("Conduct Simulation"),
+                 navlistPanel(
+                     panel_par_1(),
+                     panel_par_2(),
+                     widths = c(3, 9)),
+                 wellPanel(
+                     actionButton("btnSimu", "Conduct Simulation",
+                                  styleclass = "info"))
+             ),
+             wellPanel(h4("Upload Simulation Summary Results"),
+                       fluidRow(
+                           column(4,
+                                  fileInput(inputId = 'inSimurst',
+                                            label   = 'Choose File',
+                                            accept  = '.Rdata')
+                                  ))
+             ))
 }
 
 ## calculator
@@ -240,15 +248,57 @@ tab_calc <- function() {
              ))
 }
 
+tab_alldata <- function() {
+    tabPanel("Result Data",
+             wellPanel(
+                 h4("All Results Data"),
+                 DT::dataTableOutput("rstData")
+             ))
+}
+
+tab_present <- function() {
+    tabPanel("Result Presentation",
+             wellPanel(
+                 h4("Simulation Results"),
+                 wellPanel(
+                 fluidRow(
+                     column(3,
+                            selectInput(inputId = "inRstsce",
+                                        "Select Simulation Scenario",
+                                        choices = "",
+                                        selected = ""),
+                            selectInput(inputId = "inRstir",
+                                        "Select IR at 1 Year for Placebo",
+                                        choices = "",
+                                        selected = ""),
+                            selectInput(inputId = "inRstmulti",
+                                        "Select Multiplicity Control",
+                                        choices = "",
+                                        multiple = TRUE,
+                                        selected = ""),
+                            selectInput(inputId = "inRsttype",
+                                        "Select Results",
+                                        choices = "",
+                                        selected = "")
+                            ),
+                     column(9,
+                            plotOutput("pltRst"),
+                            tableOutput("tblRst"))
+                 ))
+             ))
+}
+
 ##define the main tabset for beans
 tab_main <- function() {
     tabsetPanel(type = "pills",
                 id   = "mainpanel",
                 tab_abe(),
                 tab_incidence(),
-                tab_multi(),
+                ## tab_multi(),
+                tab_calc(),
                 tab_design(),
-                tab_calc()
+                tab_present(),
+                tab_alldata()
                 )
 }
 
@@ -257,7 +307,7 @@ tab_main <- function() {
 ##          SIMULATION
 ##
 ## -----------------------------------------------------------
-get_simu <- reactive({
+observe({
     if (is.null(input$btnSimu)) {
         return(NULL)
     }
@@ -266,10 +316,19 @@ get_simu <- reactive({
         return(NULL)
     }
 
+    lst_hyp_tests   <- list("Hochberg"           = rd_rejection_s1,
+                            "Holms"              = rd_rejection_s2,
+                            "Hierarchical"       = rd_rejection_s3,
+                            "Split-Holms"        = rd_rejection_s4,
+                            "Split-Hochberg"     = rd_rejection_s5,
+                            "Split-Hierarchical" = rd_rejection_s6)
+
     isolate({
-        lambda_placebo <- input$inIpla
-        ve             <- c(input$inAe1, input$inAe2,
-                            input$inAe3, input$inAe4)
+        ir_placebo     <- input$inIpla
+        ve             <- c("Gen-1"         = input$inAe1,
+                            "Gen-2, High D" = input$inAe2,
+                            "Gen-2, Low D"  = input$inAe3)
+
         in_target      <- strsplit(input$inTarget, ",")[[1]]
         target_event   <- seq(as.numeric(in_target[1]),
                               as.numeric(in_target[2]),
@@ -284,6 +343,8 @@ get_simu <- reactive({
         n_cores        <- input$inNcores
         n_tot          <- input$inMaxenroll
         max_followup   <- input$inMaxfu / 12
+        seed           <- input$inSeed
+        scenario       <- input$inSce
 
         ##Create a Progress object
         progress <- shiny::Progress$new(session, min = 0, max=1)
@@ -291,21 +352,76 @@ get_simu <- reactive({
         ##Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
 
-        rst_simu <- rd_simu_all(n_reps         = n_reps,
-                                lambda_placebo = lambda_placebo,
-                                ve             = ve,
+        rst_simu <- rd_simu_all(reps           = 1:n_reps,
+                                n_cores        = n_cores,
+                                ir_placebo_1yr = ir_placebo,
+                                ve_trt         = ve,
                                 target_event   = target_event,
                                 annual_enroll  = annual_enroll,
                                 annual_dropout = annual_dropout,
+                                hyp_tests       = lst_hyp_tests,
                                 p_evaluable    = p_evaluable,
                                 p_null         = p_null,
-                                n_cores        = n_cores,
                                 n_tot          = n_tot,
                                 max_followup   = max_followup,
-                                update_progress=progress)
-    })
+                                update_progress=progress,
+                                scenario       = scenario,
+                                seed           = seed)
 
-    rd_summary(rst_simu, arms = c("C 1200mg", "C 600/300mg",
-                                  "C* 1200mg", "C* 600/300mg",
-                                  "Placebo"))
+        userLog$data <- rbind(userLog$data,
+                              rst_simu %>%
+                              rd_combine_lst() %>%
+                              rd_summary())
+    })
+})
+
+## upload simulated results
+observe({
+    in_file <- input$inSimurst
+
+    if (!is.null(in_file)) {
+        ss  <- load(in_file$datapath)
+        rst <- get(ss)
+        isolate({
+            userLog$data <- rbind(userLog$data, rst)
+        })
+    }
+})
+
+## -----------------------------------------------------------
+##
+##          PRESENTATION
+##
+## -----------------------------------------------------------
+get_sce_ir <- reactive({
+    dta <- userLog$data
+    if (is.null(dta))
+        return(NULL)
+
+    list(sces  = unique(dta$Scenario),
+         ir    = unique(dta$IR_Placebo_1Yr),
+         multi = unique(dta$Multi[!is.na(dta$Multi)]),
+         types = unique(dta$Type))
+})
+
+get_cur_data <- reactive({
+    if (is.null(input$inRstsce) |
+        is.null(input$inRstir) |
+        is.null(userLog$data))
+
+        return(NULL)
+
+    userLog$data %>%
+        dplyr::filter(Scenario       == input$inRstsce &
+                      IR_Placebo_1Yr == input$inRstir)
+})
+
+get_present <- reactive({
+    dta <- get_cur_data()
+    if (is.null(dta)) {
+        return(NULL)
+    }
+
+    rst <- rd_plot_summary(dta, type = input$inRsttype, multi = input$inRstmulti)
+    rst
 })

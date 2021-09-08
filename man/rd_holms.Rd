@@ -4,7 +4,7 @@
 \alias{rd_holms}
 \title{Holmes multiplicity control}
 \usage{
-rd_holms(pvals, alpha = 0.05)
+rd_holms(pvals, alpha = 0.05, ...)
 }
 \description{
 Holmes multiplicity control

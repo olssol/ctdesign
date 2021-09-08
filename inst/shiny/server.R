@@ -14,11 +14,17 @@
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##    -----------------------------------------------------------------------
 
+options(shiny.maxRequestSize = 200*1024^2)
+
 require(ggplot2)
 
 shinyServer(function(input, output, session) {
 
     source("design_ui.R", local = TRUE);
+
+    userLog          <- reactiveValues();
+    userLog$data     <- NULL;
+
 
     ##--------------------------------------
     ##---------main-------------------------
@@ -107,50 +113,42 @@ shinyServer(function(input, output, session) {
     ##--------------------------------------
     ##---------simulation results-----------
     ##--------------------------------------
+    output$rstData <- DT::renderDataTable({
+        userLog$data
+    },
+    rownames = NULL,
+    selection = "none",
+    options = list(pageLength = 100))
 
-    output$pltPower <- renderPlot({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
+    observe({
+        lst <- get_sce_ir()
+        if (is.null(lst))
             return(NULL)
 
-        rd_plot_power(rst_simu$rejection)
+        updateSelectInput(session, "inRstsce",   choices = lst$sce)
+        updateSelectInput(session, "inRstir",    choices = lst$ir)
+        updateSelectInput(session, "inRstmulti", choices = lst$multi)
+        updateSelectInput(session, "inRsttype", choices = lst$types)
+
     })
 
-    output$tblPower <- renderTable({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
+    output$pltRst <- renderPlot({
+        rst <- get_present()
+        if (is.null(rst)) {
             return(NULL)
-        rst_simu$rejection
+        }
+
+        rst$plt
     })
 
-    output$pltEnroll <- renderPlot({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
+    output$tblRst <- DT::renderDataTable({
+        rst <- get_present()
+        if (is.null(rst)) {
             return(NULL)
-
-        rd_plot_enroll(rst_simu$enroll)
-    })
-
-    output$tblEnroll <- renderTable({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
-            return(NULL)
-        rst_simu$enroll
-    })
-
-    output$pltEvent <- renderPlot({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
-            return(NULL)
-
-        rd_plot_event(rst_simu$events)
-    })
-
-    output$tblEvent <- renderTable({
-        rst_simu <- get_simu()
-        if (is.null(rst_simu))
-            return(NULL)
-        rst_simu$events
-    })
-
+        }
+        rst$data %>% data.frame()
+    },
+    rownames = NULL,
+    selection = "none",
+    options = list(pageLength=100))
 })

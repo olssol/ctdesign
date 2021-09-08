@@ -1,7 +1,7 @@
 #' Hochberg multiplicity control
 #'
-#'
-rd_hochberg <- function(pvals, alpha = 0.05) {
+#' @export
+rd_hochberg <- function(pvals, alpha = 0.05, ...) {
     p_inx <- order(pvals, decreasing = TRUE)
     pvals <- pvals[p_inx]
 
@@ -18,8 +18,8 @@ rd_hochberg <- function(pvals, alpha = 0.05) {
 
 #' Holmes multiplicity control
 #'
-#'
-rd_holms <- function(pvals, alpha = 0.05) {
+#' @export
+rd_holms <- function(pvals, alpha = 0.05, ...) {
     p_inx <- order(pvals)
     pvals <- pvals[p_inx]
     k     <- length(pvals)
@@ -37,8 +37,8 @@ rd_holms <- function(pvals, alpha = 0.05) {
 
 #' Hierarchical
 #'
-#'
-rd_hierarchi <- function(pvals, p_inx = NULL, alpha  = 0.05) {
+#' @export
+rd_hierarchi <- function(pvals, p_inx = NULL, alpha  = 0.05, ...) {
     k <- length(pvals)
     if (is.null(p_inx)) {
         p_inx <- seq_len(k)
@@ -128,8 +128,10 @@ rd_rejection_s6 <- function(p_vals, ...) {
 }
 
 
-## rejection all
-rd_rejection_all <- function(pvals, hyp_tests) {
+#' rejection all
+#'
+#' @export
+rd_rejection_all <- function(pvals, hyp_tests, ...) {
     n_tests <- length(hyp_tests)
 
     if (is.null(names(hyp_tests)))
@@ -143,7 +145,7 @@ rd_rejection_all <- function(pvals, hyp_tests) {
     rst <- NULL
     for (i in seq_len(n_tests)) {
         f_rej   <- hyp_tests[[i]]
-        cur_rej <- f_rej(pvals)
+        cur_rej <- f_rej(pvals, ...)
         cur_rej <- c(cur_rej, any(1 == cur_rej))
         cur_rst <- data.frame(Multi = names(hyp_tests)[[i]],
                               Arm   = labs,
