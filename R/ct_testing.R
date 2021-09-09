@@ -38,7 +38,7 @@ rd_holms <- function(pvals, alpha = 0.05, ...) {
 #' Hierarchical
 #'
 #' @export
-rd_hierarchi <- function(pvals, p_inx = NULL, alpha  = 0.05, ...) {
+rd_hierarchi <- function(pvals, alpha  = 0.05, p_inx = NULL,  ...) {
     k <- length(pvals)
     if (is.null(p_inx)) {
         p_inx <- seq_len(k)
@@ -53,7 +53,7 @@ rd_hierarchi <- function(pvals, p_inx = NULL, alpha  = 0.05, ...) {
         rej[i] <- 1
     }
 
-    rej[p_inx]
+    rej[order(p_inx)]
 }
 
 #' Pairwise P-values
