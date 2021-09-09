@@ -44,6 +44,7 @@ rd_plot_info <- function(rst_info, lab_y, ...) {
 
 
 #'
+#' @export
 #'
 rd_plot_summary <- function(rst_summary, type, ...) {
     switch(type,
