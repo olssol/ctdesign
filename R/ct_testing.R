@@ -149,6 +149,7 @@ rd_rejection_all <- function(pvals, hyp_tests, ...) {
         cur_rej <- c(cur_rej, any(1 == cur_rej))
         cur_rst <- data.frame(Multi = names(hyp_tests)[[i]],
                               Arm   = labs,
+                              Pval  = c(pvals, NA),
                               Rej   = cur_rej)
 
         rst     <- rbind(rst, cur_rst)
