@@ -1,9 +1,9 @@
 #' Hochberg multiplicity control
 #'
 #' @export
-rd_hochberg <- function(pvals, alpha = 0.05, ...) {
-    p_inx <- order(pvals, decreasing = TRUE)
-    pvals <- pvals[p_inx]
+rd_hochberg <- function(pvals_0, alpha = 0.05, ...) {
+    p_inx <- order(pvals_0, decreasing = TRUE)
+    pvals <- pvals_0[p_inx]
 
     rej   <- rep(1, length(pvals))
     for (i in seq_len(length(pvals))) {
@@ -13,7 +13,7 @@ rd_hochberg <- function(pvals, alpha = 0.05, ...) {
         rej[i] <- 0
     }
 
-    rej[p_inx]
+    rej[order(p_inx)]
 }
 
 #' Holmes multiplicity control
@@ -32,7 +32,7 @@ rd_holms <- function(pvals, alpha = 0.05, ...) {
         rej[i] <- 1
     }
 
-    rej[p_inx]
+    rej[order(p_inx)]
 }
 
 #' Hierarchical

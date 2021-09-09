@@ -4,7 +4,7 @@
 \alias{rd_hochberg}
 \title{Hochberg multiplicity control}
 \usage{
-rd_hochberg(pvals, alpha = 0.05, ...)
+rd_hochberg(pvals_0, alpha = 0.05, ...)
 }
 \description{
 Hochberg multiplicity control

@@ -100,8 +100,10 @@ rd_pts_all <- function(ve_trt, ir_placebo_1yr, p_evaluable = 1,
     rst$Enroll       <- smp_enroll
     ## event or censoring time from study begins
     rst$CalendarTime <- rst$Time + rst$Enroll
+
     ## order arms
     rst$Arm <- factor(rst$Arm, levels = arms_all)
+
 
     ## set seed
     if (!is.null(seed))
