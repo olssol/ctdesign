@@ -61,12 +61,12 @@ rd_hierarchi <- function(pvals, alpha  = 0.05, p_inx = NULL,  ...) {
 #'@export
 #'
 rd_pairwise_pval <- function(counts, p_null = 0.5, alternative = "less", ...) {
-    n_arm <- nrow(counts)
-    y_pla <- counts[n_arm, "N_Event"]
+    n_arm <- length(counts)
+    y_pla <- counts[n_arm]
 
     pvals <- NULL
     for (i in seq_len(n_arm - 1)) {
-        y_trt    <- counts[i, "N_Event"]
+        y_trt    <- counts[i]
         cur_test <- binom.test(y_trt, y_trt + y_pla,
                                p = p_null, alternative = alternative)
         pvals    <- c(pvals, cur_test$p.value)
@@ -75,7 +75,6 @@ rd_pairwise_pval <- function(counts, p_null = 0.5, alternative = "less", ...) {
     stopifnot(all(!is.na(pvals)))
 
     ## return
-    names(pvals) <- counts$Arm[-n_arm]
     pvals
 }
 
@@ -131,17 +130,21 @@ rd_rejection_s6 <- function(p_vals, ...) {
 #' rejection all
 #'
 #' @export
-rd_rejection_all <- function(pvals, hyp_tests, ...) {
+rd_rejection_all <- function(cur_data, hyp_tests, ...) {
+
+    n_arm   <- nrow(cur_data)
     n_tests <- length(hyp_tests)
+    labs    <- factor(c(cur_data$Arm[-n_arm], "Any Arm"))
+
+    abes    <- c(cur_data$AbE[-n_arm], NA)
 
     if (is.null(names(hyp_tests)))
         names(hyp_tests) <- paste("Test ", seq_len(n_tests), sep = "")
 
-    if (is.null(names(pvals)))
-        names(pvals) <- paste("Arm ", seq_len(length(pvals)), sep = "")
+    ## pvalues
+    pvals <- rd_pairwise_pval(cur_data$N_Event, ...)
 
-    labs <- c(names(pvals), "Any Arm")
-
+    ## rejection
     rst <- NULL
     for (i in seq_len(n_tests)) {
         f_rej   <- hyp_tests[[i]]
@@ -150,11 +153,10 @@ rd_rejection_all <- function(pvals, hyp_tests, ...) {
         cur_rst <- data.frame(Multi = names(hyp_tests)[[i]],
                               Arm   = labs,
                               Pval  = c(pvals, NA),
+                              Abe   = abes,
                               Rej   = cur_rej)
-
         rst     <- rbind(rst, cur_rst)
     }
 
-    rst$Arm <- factor(rst$Arm, levels = labs)
     rst
 }

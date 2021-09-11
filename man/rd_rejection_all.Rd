@@ -4,7 +4,7 @@
 \alias{rd_rejection_all}
 \title{rejection all}
 \usage{
-rd_rejection_all(pvals, hyp_tests, ...)
+rd_rejection_all(cur_data, hyp_tests, ...)
 }
 \description{
 rejection all

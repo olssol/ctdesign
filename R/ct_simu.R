@@ -223,8 +223,7 @@ rd_simu_single <- function(ve_trt, target_event, hyp_tests,
         if (0 == nrow(cur_data))
             next
 
-        cur_pvals <- rd_pairwise_pval(cur_data, ...)
-        cur_rej   <- rd_rejection_all(cur_pvals, hyp_tests, ...)
+        cur_rej   <- rd_rejection_all(cur_data, hyp_tests, ...)
         rejection <- rbind(rejection,
                            cbind(Target = j, cur_rej))
     }
