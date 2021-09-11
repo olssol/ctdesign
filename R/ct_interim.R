@@ -13,15 +13,17 @@ rd_interim_test <- function(rst_rejection, target_event,
     n_inter         <- length(inter_fractions)
     reps            <- unique(rst_rejection$Rep)
 
+    rst_rejection   <- rst_rejection %>%
+        filter(Arm != "Any Arm")
+
     rst <- parallel::mclapply(reps, function(r) {
         rst <- NULL
         for (i in seq_len(n_inter)) {
             cur_data <- rst_rejection %>%
                 filter(Rep    == r               &
-                       Target == inter_events[i] &
-                       Arm    != "Any Arm") %>%
+                       Target == inter_events[i]) %>%
                 arrange(Arm) %>%
-                select(Arm, Pval) %>%
+                select(Arm, Pval, Abe) %>%
                 data.frame()
 
             cur_rej <- hyp_test(cur_data$Pval,
@@ -39,7 +41,10 @@ rd_interim_test <- function(rst_rejection, target_event,
         rst
     }, mc.cores = n_cores)
 
-    data.table::rbindlist(rst)
+    rst <- data.table::rbindlist(rst)
+
+    list(interim = rst,
+         n_reps  = length(reps))
 }
 
 #' Summary Interim
@@ -47,18 +52,20 @@ rd_interim_test <- function(rst_rejection, target_event,
 #' @export
 #'
 rd_inerim_summary_single <- function(inter_rejection) {
-    inter_rejection %>%
+    n_reps <- inter_rejection$n_reps
+    rst    <- inter_rejection$interim %>%
+        filter(Rej == 1) %>%
         group_by(Target, Rep, Arm) %>%
-        arrange(desc(Rej), Interim) %>%
+        arrange(Interim) %>%
         slice(n = 1) %>%
-        mutate(Interim = if_else(Rej == 1,
-                                  as.character(Interim),
-                                 "Failed")) %>%
         group_by(Target, Arm, Interim) %>%
-        summarize(N_Rej = n()) %>%
-        mutate(Rej = N_Rej / sum(N_Rej)) %>%
+        summarize(N_Rej = n(),
+                  Min_Abe = min(Abe)) %>%
+        mutate(Rej = N_Rej / n_reps) %>%
+        mutate(CumuRej = cumsum(Rej)) %>%
         data.frame()
 
+    rst
 }
 
 #' Summary all
@@ -76,7 +83,7 @@ rd_interim_summary <- function(rst_rejection, target_events,
             cur_data <- rst_rejection %>%
                 filter(Scenario == s &
                        IR_Placebo_1Yr == r) %>%
-                select(Target, Arm, Pval, Rep) %>%
+                select(Target, Arm, Pval, Abe, Rep) %>%
                 distinct()
 
             for (te in target_events) {
@@ -88,18 +95,15 @@ rd_interim_summary <- function(rst_rejection, target_events,
                 cur_rej$Scenario       <- s
                 cur_rej$IR_Placebo_1Yr <- r
                 cur_rej$Target         <- te
-                rst_all <- rbind(rst_all, cur_rej)
+                rst_all                <- rbind(rst_all, cur_rej)
             }
         }
     }
 
     rst_all %>%
         mutate(Interim_Lab = factor(Interim,
-                                    levels = c(seq_len(length(inter_looks)),
-                                               "Failed"),
-                                    labels = c(paste("IF=",
-                                                     names(inter_looks),
-                                                     sep = ""),
-                                               "Failed"))
-               )
+                                    levels = seq_len(length(inter_looks)),
+                                    labels = paste("IF=",
+                                                   names(inter_looks),
+                                                   sep = "")))
 }

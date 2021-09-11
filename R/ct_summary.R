@@ -123,14 +123,12 @@ rd_get_results <- function(rst_summary,
     rst_ss <- rst_rejection %>%
         filter(Power >= `power_level`) %>%
         group_by(Scenario, IR_Placebo_1Yr, Arm, Multi) %>%
-        arrange(Power) %>%
+        arrange(Target) %>%
         slice_head(n = 1) %>%
         rename(Power_By = Arm)
 
     rst_details <- rst_ss %>%
-        f_j2()
-
-    rst_power <- rst_ss %>%
+        f_j2() %>%
         f_j0()
 
     rst_ss <- rst_ss %>%
@@ -138,7 +136,6 @@ rd_get_results <- function(rst_summary,
 
     ## return
     list(samplesize = rst_ss,
-         power      = rst_power,
          details    = rst_details)
 }
 
