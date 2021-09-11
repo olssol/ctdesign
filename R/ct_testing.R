@@ -134,8 +134,9 @@ rd_rejection_all <- function(cur_data, hyp_tests, ...) {
 
     n_arm   <- nrow(cur_data)
     n_tests <- length(hyp_tests)
-    labs    <- factor(c(cur_data$Arm[-n_arm], "Any Arm"))
-
+    labs    <- c(levels(cur_data$Arm)[-n_arm],
+                 "Any Arm")
+    labs    <- factor(labs, levels = labs)
     abes    <- c(cur_data$AbE[-n_arm], NA)
 
     if (is.null(names(hyp_tests)))
