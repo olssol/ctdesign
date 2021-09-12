@@ -27,3 +27,12 @@ rd_incidence <- function(ve, lambda_placebo) {
 rd_lambda_censor <- function(annual_dropout, tp = 1) {
     - log(1 - annual_dropout) / tp
 }
+
+#' Get prob based on abe
+#'
+#'@export
+#'
+#'
+rd_prob <- function(abe, ratio = 1) {
+    (1 - abe) * ratio / ((1 - abe) * ratio + 1)
+}
