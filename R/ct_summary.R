@@ -58,6 +58,7 @@ rd_summary <- function(rst_simu) {
 #'
 #' @export
 rd_get_results <- function(rst_summary,
+                           target_event = NULL,
                            multi = NULL,
                            power_by = NULL,
                            power_level = 0.9) {
@@ -105,6 +106,18 @@ rd_get_results <- function(rst_summary,
         dta
     }
 
+    f_a <- function(dta) {
+        if (is.null(target_event)) {
+            rst <- dta %>%
+                arrange(Scenario, IR_Placebo_1Yr, Multi, Power_By, Arm)
+        } else{
+            rst <- dta %>%
+                arrange(Scenario, IR_Placebo_1Yr, Multi, Arm)
+        }
+
+        rst
+    }
+
     rst_rejection <- rst_summary %>%
         filter(Type == "Power") %>%
         select(-Type) %>%
@@ -117,22 +130,31 @@ rd_get_results <- function(rst_summary,
 
     if (!is.null(power_by)) {
         rst_rejection <- rst_rejection %>%
-            filter(Arm %in% `multi`)
+            filter(Arm %in% `power_by`)
     }
 
-    rst_ss <- rst_rejection %>%
-        filter(Power >= `power_level`) %>%
-        group_by(Scenario, IR_Placebo_1Yr, Arm, Multi) %>%
-        arrange(Target) %>%
-        slice_head(n = 1) %>%
-        rename(Power_By = Arm)
+    if (is.null(target_event)) {
+        rst_ss <- rst_rejection %>%
+            filter(Power >= `power_level`) %>%
+            group_by(Scenario, IR_Placebo_1Yr, Arm, Multi) %>%
+            arrange(Target) %>%
+            slice_head(n = 1) %>%
+            rename(Power_By = Arm)
+    } else {
+        rst_ss <- rst_rejection %>%
+            filter(Target == target_event) %>%
+            select(Scenario, IR_Placebo_1Yr, Arm, Multi) %>%
+            distinct()
+    }
 
     rst_details <- rst_ss %>%
         f_j2() %>%
-        f_j0()
+        f_j0() %>%
+        f_a()
 
     rst_ss <- rst_ss %>%
-        f_j1()
+        f_j1() %>%
+        f_a()
 
     ## return
     list(samplesize = rst_ss,

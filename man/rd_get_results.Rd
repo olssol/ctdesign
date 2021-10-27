@@ -4,7 +4,13 @@
 \alias{rd_get_results}
 \title{Get target number of events}
 \usage{
-rd_get_results(rst_summary, multi = NULL, power_by = NULL, power_level = 0.9)
+rd_get_results(
+  rst_summary,
+  target_event = NULL,
+  multi = NULL,
+  power_by = NULL,
+  power_level = 0.9
+)
 }
 \description{
 Get target number of events
